@@ -1,0 +1,130 @@
+body {
+  background-color: #EEEEEE;
+  font-family: 'IBM Plex Sans', sans-serif;
+  margin: 0 auto;
+  max-width: 800px;
+}
+h1 {
+  color: #2A453E;
+  font-family: 'Bubblegum Sans', cursive;
+  text-align: center;
+}
+
+p {
+  color: #2A453E;
+  margin: 0;
+}
+
+button, 
+button:active, 
+button:focus {
+    outline: none;
+}
+
+.menu {
+  background-image: url(./snakebg.png);
+  background-position-x: center;
+  background-position-y: 80px;
+  background-repeat: no-repeat;
+  min-height: 500px;
+  text-align: center;
+}
+
+#canvas {
+  margin: 0 auto;
+  display: block;
+  background-color: #E3E3E3;
+}
+
+.menu #gameplay {
+  text-align: center;
+}
+.btn {
+  color: #2A453E;
+  background-color: #FFFFFF;
+  border: 0;
+  transition: 200ms;
+}
+
+.btn:hover {
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-menu {
+  font-family: 'Bubblegum Sans', cursive;
+  font-size: 24px;
+  width: 200px;
+  height: 64px;
+  border-radius: 32px;
+  margin: 200px auto;
+}
+
+.control-panel {
+  display: block;
+  margin-bottom: 20px; 
+  min-height: 30px;
+}
+
+.info-bar {
+  display: inline-block;
+}
+
+.game-menu {
+  display: block;
+  float: right;
+}
+
+.game-menu button {
+  height: 32px;
+  min-width: 32px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  margin-left: 8px;
+  border-radius: 50px;
+  padding: 0;
+}
+
+.pause {
+  width: 32px;
+  height: 32px;
+  background-color: #5DBEC4;
+  display: inline-block;
+    -webkit-mask-image: url(./pause.svg);
+    mask-image: url(./pause.svg);
+}
+
+.play {
+  width: 32px;
+  height: 32px;
+  background-color: #77C883;
+  display: inline-block;
+    -webkit-mask-image: url(./play.svg);
+    mask-image: url(./play.svg);
+}
+
+.exit {
+  width: 32px;
+  height: 32px;
+  background-color: #F17482;
+  display: inline-block;
+    -webkit-mask-image: url(./exit.svg);
+    mask-image: url(./exit.svg);
+}
+
+.score {
+  height: 32px;
+  min-width: 66px;
+  border-radius: 50px;
+  background-color: #FFFFFF;
+}
+
+  .score span {
+    display: inline-block;
+    height: 18px;
+    margin-left: 8px;
+    margin-top: 5px;
+  } 
+
+  .score span p {
+    line-height: 18px;
+  } 
