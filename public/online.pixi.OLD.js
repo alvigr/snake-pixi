@@ -45,12 +45,50 @@ snake.speed = 2;
 snake.anchor.x = 0.5;
 snake.anchor.y = 0.5;
 snake.nextRoute = {
-  r: null,
+  cell: null,
   route: null,
 };
+let routed = true;
+let finishTick
 
 const moveSnake = (delta) => {
-  snake.route = rotation()
+  finishTick = false
+  if (!routed) {
+    console.log('not routed')
+    if (snake.route === Routes.RIGHT) {
+     if (snake.x > snake.nextRoute.cell + 20) {
+       snake.x = snake.nextRoute.cell + 20
+       snake.route = snake.nextRoute.route
+       snake.nextRoute.route = null
+       routed = true
+       console.log('routed')
+     }
+    } else if (snake.route === Routes.LEFT) {
+      if (snake.x < snake.nextRoute.cell - 20) {
+        snake.x = snake.nextRoute.cell - 20
+        snake.route = snake.nextRoute.route
+        snake.nextRoute.route = null
+        routed = true
+        console.log('routed')
+      }
+    } else if (snake.route === Routes.UP) {
+      if (snake.y < snake.nextRoute.cell - 20) {
+        snake.y = snake.nextRoute.cell - 20
+        snake.route = snake.nextRoute.route
+        snake.nextRoute.route = null
+        routed = true
+        console.log('routed')
+      } 
+    } else if (snake.route === Routes.DOWN) {
+      if (snake.y > snake.nextRoute.cell + 20) {
+        snake.y = snake.nextRoute.cell + 20
+        snake.route = snake.nextRoute.route
+        snake.nextRoute.route = null
+        routed = true
+        console.log('routed')
+      }
+    }
+  }
 
   const velocity = Velocities[snake.route]
 
@@ -71,6 +109,7 @@ const moveSnake = (delta) => {
   } else if (snake.y > snakeBounds.y + snakeBounds.height) {
     snake.y -= snakeBounds.height;
   }
+  finishTick = true
 }
 
 app.stage.addChild(snake);
@@ -89,120 +128,40 @@ function setNextRoute (event) {
     return
   }
   let requestedRoute = keyMap[event.key];
-  let nx, ny;
-  if (requestedRoute === Routes.UP && snake.route === Routes.DOWN) {
+  if (requestedRoute === Routes.UP && (snake.route === Routes.DOWN || snake.route === Routes.UP)) {
     return
   }
-  if (requestedRoute === Routes.DOWN && snake.route === Routes.UP) {
+  if (requestedRoute === Routes.DOWN && (snake.route === Routes.UP || snake.route === Routes.DOWN)) {
     return
   }
-  if (requestedRoute === Routes.RIGHT && snake.route === Routes.LEFT) {
+  if (requestedRoute === Routes.RIGHT && (snake.route === Routes.LEFT || snake.route === Routes.RIGHT)) {
     return
   }
-  if (requestedRoute === Routes.LEFT && snake.route === Routes.RIGHT) {
+  if (requestedRoute === Routes.LEFT && (snake.route === Routes.RIGHT || snake.route === Routes.LEFT)) {
     return
   }
   snake.nextRoute.route = requestedRoute
-
-  switch (snake.route) {
-    case Routes.LEFT:
-      nx = Math.floor(snake.x / 40) * 40
-      snake.nextRoute.r = new PIXI.Rectangle (
-        nx - 30,
-        snake.y + 10,
-        nx + 10,
-        snake.y - 10,
-      )
-    break;
-    case Routes.UP:
-      ny = Math.floor(snake.y / 40) * 40
-      snake.nextRoute.r = new PIXI.Rectangle (
-        snake.x - 10,
-        ny - 30,
-        snake.x + 10,
-        ny + 10,
-      )
-    break;
-    case Routes.DOWN:
-      ny = Math.ceil(snake.y / 40) * 40
-      snake.nextRoute.r = new PIXI.Rectangle (
-        snake.x - 10,
-        ny + 10,
-        snake.x + 10,
-        ny + 30,
-      )
-    break;
-    default:
-      nx = Math.ceil(snake.x / 40) * 40
-      snake.nextRoute.r = new PIXI.Rectangle (
-        nx + 10,
-        snake.y + 10,
-        nx + 30,
-        snake.y - 10,
-      )
-    break;
-  }
-  console.log(snake.x, nx, snake.y, ny)
-}
-
-function rotation () {
-  if (routeCell && hitTestRectangle(snake, snake.nextRoute.r)) {
-    return snake.route;
-  } else if (snake.nextRoute.route && hitTestRectangle(snake, snake.nextRoute.r)) {
-    routeCell = snake.nextRoute.r;
-    return snake.nextRoute.route;
-  }
-  routeCell = undefined;
-  return snake.route;
-}
-
-function hitTestRectangle(r1, r2) {
-
-  //Define the variables we'll need to calculate
-  let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
-
-  //hit will determine whether there's a collision
-  hit = false;
-
-  //Find the center points of each sprite
-  r1.centerX = r1.x + r1.width / 2;
-  r1.centerY = r1.y + r1.height / 2;
-  r2.centerX = r2.x + r2.width / 2;
-  r2.centerY = r2.y + r2.height / 2;
-
-  //Find the half-widths and half-heights of each sprite
-  r1.halfWidth = r1.width / 2;
-  r1.halfHeight = r1.height / 2;
-  r2.halfWidth = r2.width / 2;
-  r2.halfHeight = r2.height / 2;
-
-  //Calculate the distance vector between the sprites
-  vx = r1.centerX - r2.centerX;
-  vy = r1.centerY - r2.centerY;
-
-  //Figure out the combined half-widths and half-heights
-  combinedHalfWidths = r1.halfWidth + r2.halfWidth;
-  combinedHalfHeights = r1.halfHeight + r2.halfHeight;
-
-  //Check for a collision on the x axis
-  if (Math.abs(vx) < combinedHalfWidths) {
-
-    //A collision might be occurring. Check for a collision on the y axis
-    if (Math.abs(vy) < combinedHalfHeights) {
-
-      //There's definitely a collision happening
-      hit = true;
-    } else {
-
-      //There's no collision on the y axis
-      hit = false;
+  let nextCell
+  if (routed && finishTick) {
+    routed = false
+    switch (snake.route) {
+      case Routes.LEFT:
+        nextCell = Math.floor(snake.x / 40) * 40 - 20
+        snake.nextRoute.cell = nextCell <= snakeBounds.x ? snakeBounds.width - 60 : nextCell
+      break;
+      case Routes.UP:
+        nextCell = Math.floor(snake.y / 40) * 40 - 20
+        snake.nextRoute.cell = nextCell <= snakeBounds.y ? snakeBounds.height - 40 : nextCell
+      break;
+      case Routes.DOWN:
+        nextCell = Math.ceil(snake.y / 40) * 40 + 20
+        snake.nextRoute.cell = nextCell >= snakeBounds.y + snakeBounds.height ? snakeBounds.y + 20 : nextCell
+      break;
+      case Routes.RIGHT:
+        nextCell = Math.ceil(snake.x / 40) * 40 + 20
+        snake.nextRoute.cell = nextCell >= snakeBounds.x + snakeBounds.width ? snakeBounds.x + 20 : nextCell
+      break;
     }
-  } else {
-
-    //There's no collision on the x axis
-    hit = false;
   }
-
-  //`hit` will be either `true` or `false`
-  return hit;
-};
+  console.log(snake.x, snake.y, snake.nextRoute.cell)
+}
