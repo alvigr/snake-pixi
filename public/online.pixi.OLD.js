@@ -44,16 +44,12 @@ const bgCell = PIXI.Texture.from('./cell.png');
 
 const head = new PIXI.Sprite(snakeH);
 const tale = new PIXI.Sprite(snakeT);
-const body = new PIXI.Sprite(snakeB);
 
 let gameScene = new PIXI.Container();
 let bg = new PIXI.Container();
 
-let myBezier = {bezier:[{x:80, y:20}], ease: Linear.easeNone};
-
-let d = 0;
-
-bg.zIndex = -1;
+gameScene.sortableChildren  = true;
+bg.zIndex = 1;
 
 for (let i = 0; i < app.screen.height; i += CELL) {
   for (let j = 0; j < app.screen.width; j += CELL) {
@@ -70,12 +66,12 @@ head.route = Routes.RIGHT;
 head.speed = 2;
 head.anchor.x = 0.5;
 head.anchor.y = 0.5;
-head.nextRoute = {
-  cell: null,
-  route: Routes.RIGHT,
-};
+head.nextRoute = Routes.RIGHT;
+head.step = 0;
+head.d = 0;
+head._zIndex = 301;
 
-head.bend = []
+let bends = [];
 
 // tale.x = head.x - 80;
 // tale.y = 0.5 * CELL;
@@ -87,30 +83,40 @@ head.bend = []
 //   route: null,
 // };
 
-body.y = 0.5 * CELL;
-body.x = head.x - 40;
-body.route = Routes.RIGHT;
-body.anchor.x = 0.5;
-body.anchor.y = 0.5;
+let bodySnake = [];
+
+for (let i = 0; i <= 30; i++) {
+  const body = new PIXI.Sprite(snakeB);
+  body.y = 0.5 * CELL;
+  body.x = head.x - 20 - i * 10;
+  body.route = Routes.RIGHT;
+  body.anchor.x = 0.5;
+  body.anchor.y = 0.5;
+  body.nextRoute = Routes.RIGHT;
+  body.step = 20 - i * 10;
+  body.d = 0;
+  body._zIndex = 300 - i;
+  bodySnake.push(body)
+  gameScene.addChild(body);
+}
 
 // gameScene.addChild(tale);
-gameScene.addChild(body);
+
 gameScene.addChild(head);
 
 let needRoute = false;
 let routed = true;
 let nextCell;
-let step = 0;
 let deltaX;
 let deltaY;
 
 function moveHead (delta) {
   
 
-  if (step >= CELL) {
-    d = step - CELL
+  if (head.step >= CELL) {
+    head.d  = head.step - CELL
     rotation();  
-    step = d;
+    head.step = head.d ;
   }
 
   const velocity = Velocities[head.route]
@@ -124,9 +130,9 @@ function moveHead (delta) {
   head.y += deltaY * velocity.y
 
   if ((head.route === Routes.RIGHT) || (head.route === Routes.LEFT)) {
-    step += deltaX 
+    head.step += deltaX 
   } else {
-    step += deltaY 
+    head.step += deltaY 
   }
 
   cheackBounds(head);
@@ -134,10 +140,23 @@ function moveHead (delta) {
 
 }
 
-function moveBody () {
+function moveBody (body, i) {
+  if (body.step >= CELL) {
+    body.d  = body.step - CELL
+    rotationBody(body, i);  
+    body.step = body.d ;
+  }
+
   const velocity = Velocities[body.route]
   body.x += deltaX * velocity.x
   body.y += deltaY * velocity.y
+
+  if ((body.route === Routes.RIGHT) || (body.route === Routes.LEFT)) {
+    body.step += deltaX 
+  } else {
+    body.step += deltaY 
+  }
+
   cheackBounds(body);
 }
 
@@ -156,29 +175,69 @@ function cheackBounds (obj) {
 }
 
 function rotation () {
-  if (head.nextRoute.route !== head.route) {
+  if (head.nextRoute !== head.route
+    && head.x > 0
+    && head.x < app.screen.width
+    && head.y > 0
+    && head.y < app.screen.height) {
+    let newBend = {
+      x: null,
+      y: null,
+      route: null 
+    };
     if (head.route === Routes.RIGHT) {
-      console.log('y', head.y)
-      head.y += head.nextRoute.route === Routes.DOWN ? d : -d
-      head.x = Math.round(head.x - d);
-      console.log('x', head.x)
+      newBend.y = head.y
+      head.y += head.nextRoute === Routes.DOWN ? head.d  : -head.d 
+      head.x = Math.round(head.x - head.d );
+      newBend.x = head.x
     } else if (head.route === Routes.LEFT) {
-      console.log('y', head.y)
-      head.y += head.nextRoute.route === Routes.DOWN ? d : -d
-      head.x = Math.round(head.x + d);
-      console.log('x', head.x)
+      newBend.y = head.y
+      head.y += head.nextRoute === Routes.DOWN ? head.d  : -head.d 
+      head.x = Math.round(head.x + head.d );
+      newBend.x = head.x
     } else if (head.route === Routes.UP) {
-      console.log('x', head.x)
-      head.x += head.nextRoute.route === Routes.RIGHT ? d : -d
-      head.y = Math.round(head.y + d);
-      console.log('y', head.y)
+      newBend.x = head.x
+      head.x += head.nextRoute === Routes.RIGHT ? head.d  : -head.d 
+      head.y = Math.round(head.y + head.d );
+      newBend.y = head.y
     } else if (head.route === Routes.DOWN) {
-      console.log('x', head.x)
-      head.x += head.nextRoute.route === Routes.RIGHT ? d : -d
-      head.y = Math.round(head.y - d);
-      console.log('y', head.y)
+      newBend.x = head.x
+      head.x += head.nextRoute === Routes.RIGHT ? head.d  : -head.d 
+      head.y = Math.round(head.y - head.d );
+      newBend.y = head.y
     }
-    head.route = head.nextRoute.route;
+    head.route = head.nextRoute;
+    newBend.route = head.nextRoute;
+    bends.push(newBend);
+    console.log(newBend)
+  }
+}
+
+function rotationBody (body, i) {
+  let newBend = bends.find((bend) => {
+    return (Math.round(body.x / 10) * 10) === bend.x && (Math.round(body.y / 10) * 10) === bend.y
+  })
+  body.nextRoute = newBend ? newBend.route : body.route
+  //console.log(newBend)
+  if (body.nextRoute !== body.route) {
+    if (body.route === Routes.RIGHT) {
+      body.y += body.nextRoute === Routes.DOWN ? body.d  : -body.d 
+      body.x = Math.round(body.x - body.d );
+    } else if (body.route === Routes.LEFT) {
+      body.y += body.nextRoute === Routes.DOWN ? body.d  : -body.d 
+      body.x = Math.round(body.x + body.d );
+    } else if (body.route === Routes.UP) {
+      body.x += body.nextRoute === Routes.RIGHT ? body.d  : -body.d 
+      body.y = Math.round(body.y + body.d );
+    } else if (body.route === Routes.DOWN) {
+      body.x += body.nextRoute === Routes.RIGHT ? body.d  : -body.d 
+      body.y = Math.round(body.y - body.d );
+    }
+    if (i === bodySnake.length - 1) {
+      body.route =  bends.shift().route
+    } else {
+      body.route = body.nextRoute;
+    }
   }
 }
 
@@ -194,7 +253,9 @@ const snakeBounds = new PIXI.Rectangle(
 
 app.ticker.add((delta) => {
   moveHead(delta)
-  moveBody()
+  bodySnake.forEach((body, i) => {
+    moveBody(body, i)
+  }) 
 });
 
 function setNextRoute (event) {
@@ -218,6 +279,6 @@ function setNextRoute (event) {
     && head.route === Routes.RIGHT) {
     return
   }
-  head.nextRoute.route = requestedRoute
+  head.nextRoute = requestedRoute
   needRoute = true
 }
