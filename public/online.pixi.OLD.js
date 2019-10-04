@@ -73,16 +73,6 @@ head._zIndex = 301;
 
 let bends = [];
 
-// tale.x = head.x - 80;
-// tale.y = 0.5 * CELL;
-// tale.route = Routes.RIGHT;
-// tale.anchor.x = 0.5;
-// tale.anchor.y = 0.5;
-// tale.nextRoute = {
-//   cell: null,
-//   route: null,
-// };
-
 let bodySnake = [];
 
 for (let i = 0; i <= 30; i++) {
@@ -100,18 +90,13 @@ for (let i = 0; i <= 30; i++) {
   gameScene.addChild(body);
 }
 
-// gameScene.addChild(tale);
-
 gameScene.addChild(head);
 
-let needRoute = false;
-let routed = true;
 let nextCell;
 let deltaX;
 let deltaY;
 
 function moveHead (delta) {
-  
 
   if (head.step >= CELL) {
     head.d  = head.step - CELL
@@ -136,8 +121,6 @@ function moveHead (delta) {
   }
 
   cheackBounds(head);
-  // cheackBounds(tale);
-
 }
 
 function moveBody (body, i) {
@@ -218,7 +201,6 @@ function rotationBody (body, i) {
     return (Math.round(body.x / 10) * 10) === bend.x && (Math.round(body.y / 10) * 10) === bend.y
   })
   body.nextRoute = newBend ? newBend.route : body.route
-  //console.log(newBend)
   if (body.nextRoute !== body.route) {
     if (body.route === Routes.RIGHT) {
       body.y += body.nextRoute === Routes.DOWN ? body.d  : -body.d 
@@ -280,5 +262,4 @@ function setNextRoute (event) {
     return
   }
   head.nextRoute = requestedRoute
-  needRoute = true
 }
