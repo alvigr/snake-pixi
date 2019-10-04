@@ -163,7 +163,6 @@ app.ticker.add(() => {
         //points[i].x = i * ropeLength + Math.cos((i * 0.3) + count) * 20;
         //points[i].y = Math.sin((i * 0.5) + count) * 30;
         points[i].y = i < 10 ? 0 : 150;
-        console.log(i, points[i].x, points[i].y)
     }
 });
 

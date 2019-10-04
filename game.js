@@ -2,7 +2,7 @@ const EventEmitter = require('events')
 const gameArea = {
   width: 800,
   height: 600,
-  cell: 20,
+  cell: 40,
 }
 
 const Routes = { 

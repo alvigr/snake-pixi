@@ -37,82 +37,153 @@ const app = new PIXI.Application({
 document.body.appendChild(app.view);
 document.addEventListener('keydown', setNextRoute);
 
-const snake = PIXI.Sprite.from('./snakehead.png');
-snake.y = 0.5 * CELL;
-snake.x = 0;
-snake.route = Routes.RIGHT;
-snake.speed = 2;
-snake.anchor.x = 0.5;
-snake.anchor.y = 0.5;
-snake.nextRoute = {
-  cell: null,
-  route: null,
-};
-let routed = true;
-let finishTick
+const snakeH = PIXI.Texture.from('./snakehead.png');
+const snakeB = PIXI.Texture.from('./snakebody.png');
+const snakeT = PIXI.Texture.from('./snaketale.png');
+const bgCell = PIXI.Texture.from('./cell.png');
 
-const moveSnake = (delta) => {
-  finishTick = false
-  if (!routed) {
-    console.log('not routed')
-    if (snake.route === Routes.RIGHT) {
-     if (snake.x > snake.nextRoute.cell + 20) {
-       snake.x = snake.nextRoute.cell + 20
-       snake.route = snake.nextRoute.route
-       snake.nextRoute.route = null
-       routed = true
-       console.log('routed')
-     }
-    } else if (snake.route === Routes.LEFT) {
-      if (snake.x < snake.nextRoute.cell - 20) {
-        snake.x = snake.nextRoute.cell - 20
-        snake.route = snake.nextRoute.route
-        snake.nextRoute.route = null
-        routed = true
-        console.log('routed')
-      }
-    } else if (snake.route === Routes.UP) {
-      if (snake.y < snake.nextRoute.cell - 20) {
-        snake.y = snake.nextRoute.cell - 20
-        snake.route = snake.nextRoute.route
-        snake.nextRoute.route = null
-        routed = true
-        console.log('routed')
-      } 
-    } else if (snake.route === Routes.DOWN) {
-      if (snake.y > snake.nextRoute.cell + 20) {
-        snake.y = snake.nextRoute.cell + 20
-        snake.route = snake.nextRoute.route
-        snake.nextRoute.route = null
-        routed = true
-        console.log('routed')
-      }
-    }
+const head = new PIXI.Sprite(snakeH);
+const tale = new PIXI.Sprite(snakeT);
+const body = new PIXI.Sprite(snakeB);
+
+let gameScene = new PIXI.Container();
+let bg = new PIXI.Container();
+
+let myBezier = {bezier:[{x:80, y:20}], ease: Linear.easeNone};
+
+let d = 0;
+
+bg.zIndex = -1;
+
+for (let i = 0; i < app.screen.height; i += CELL) {
+  for (let j = 0; j < app.screen.width; j += CELL) {
+    const cell = new PIXI.Sprite(bgCell);
+    cell.x = j;
+    cell.y = i;
+    bg.addChild(cell);
   }
-
-  const velocity = Velocities[snake.route]
-
-  snake.rotation = Rotations[snake.route]
-
-  snake.x += velocity.x * delta * snake.speed
-  snake.y += velocity.y * delta * snake.speed
-  
-
-  if (snake.x < snakeBounds.x) {
-    snake.x += snakeBounds.width;
-  } else if (snake.x > snakeBounds.x + snakeBounds.width) {
-    snake.x -= snakeBounds.width;
-  }
-
-  if (snake.y < snakeBounds.y) {
-    snake.y += snakeBounds.height;
-  } else if (snake.y > snakeBounds.y + snakeBounds.height) {
-    snake.y -= snakeBounds.height;
-  }
-  finishTick = true
 }
 
-app.stage.addChild(snake);
+head.y = 0.5 * CELL;
+head.x = 0.5 * CELL;
+head.route = Routes.RIGHT;
+head.speed = 2;
+head.anchor.x = 0.5;
+head.anchor.y = 0.5;
+head.nextRoute = {
+  cell: null,
+  route: Routes.RIGHT,
+};
+
+head.bend = []
+
+// tale.x = head.x - 80;
+// tale.y = 0.5 * CELL;
+// tale.route = Routes.RIGHT;
+// tale.anchor.x = 0.5;
+// tale.anchor.y = 0.5;
+// tale.nextRoute = {
+//   cell: null,
+//   route: null,
+// };
+
+body.y = 0.5 * CELL;
+body.x = head.x - 40;
+body.route = Routes.RIGHT;
+body.anchor.x = 0.5;
+body.anchor.y = 0.5;
+
+// gameScene.addChild(tale);
+gameScene.addChild(body);
+gameScene.addChild(head);
+
+let needRoute = false;
+let routed = true;
+let nextCell;
+let step = 0;
+let deltaX;
+let deltaY;
+
+function moveHead (delta) {
+  
+
+  if (step >= CELL) {
+    d = step - CELL
+    rotation();  
+    step = d;
+  }
+
+  const velocity = Velocities[head.route]
+
+  head.rotation = Rotations[head.route]
+
+  deltaX = delta * head.speed
+  deltaY = delta * head.speed
+
+  head.x += deltaX * velocity.x
+  head.y += deltaY * velocity.y
+
+  if ((head.route === Routes.RIGHT) || (head.route === Routes.LEFT)) {
+    step += deltaX 
+  } else {
+    step += deltaY 
+  }
+
+  cheackBounds(head);
+  // cheackBounds(tale);
+
+}
+
+function moveBody () {
+  const velocity = Velocities[body.route]
+  body.x += deltaX * velocity.x
+  body.y += deltaY * velocity.y
+  cheackBounds(body);
+}
+
+function cheackBounds (obj) {
+  if (obj.x < snakeBounds.x) {
+    obj.x += snakeBounds.width;
+  } else if (obj.x > snakeBounds.x + snakeBounds.width) {
+    obj.x -= snakeBounds.width;
+  }
+
+  if (obj.y < snakeBounds.y) {
+    obj.y += snakeBounds.height;
+  } else if (obj.y > snakeBounds.y + snakeBounds.height) {
+    obj.y -= snakeBounds.height;
+  }
+}
+
+function rotation () {
+  if (head.nextRoute.route !== head.route) {
+    if (head.route === Routes.RIGHT) {
+      console.log('y', head.y)
+      head.y += head.nextRoute.route === Routes.DOWN ? d : -d
+      head.x = Math.round(head.x - d);
+      console.log('x', head.x)
+    } else if (head.route === Routes.LEFT) {
+      console.log('y', head.y)
+      head.y += head.nextRoute.route === Routes.DOWN ? d : -d
+      head.x = Math.round(head.x + d);
+      console.log('x', head.x)
+    } else if (head.route === Routes.UP) {
+      console.log('x', head.x)
+      head.x += head.nextRoute.route === Routes.RIGHT ? d : -d
+      head.y = Math.round(head.y + d);
+      console.log('y', head.y)
+    } else if (head.route === Routes.DOWN) {
+      console.log('x', head.x)
+      head.x += head.nextRoute.route === Routes.RIGHT ? d : -d
+      head.y = Math.round(head.y - d);
+      console.log('y', head.y)
+    }
+    head.route = head.nextRoute.route;
+  }
+}
+
+app.stage.addChild(bg);
+app.stage.addChild(gameScene);
 
 const snakeBounds = new PIXI.Rectangle(
   -20,
@@ -121,47 +192,32 @@ const snakeBounds = new PIXI.Rectangle(
   app.screen.height + 40
 );
 
-app.ticker.add((delta) =>  moveSnake(delta));
+app.ticker.add((delta) => {
+  moveHead(delta)
+  moveBody()
+});
 
 function setNextRoute (event) {
   if ( ! (event.key in keyMap)) {
     return
   }
   let requestedRoute = keyMap[event.key];
-  if (requestedRoute === Routes.UP && (snake.route === Routes.DOWN || snake.route === Routes.UP)) {
+  if (requestedRoute === Routes.UP
+    && head.route === Routes.DOWN) {
     return
   }
-  if (requestedRoute === Routes.DOWN && (snake.route === Routes.UP || snake.route === Routes.DOWN)) {
+  if (requestedRoute === Routes.DOWN 
+    && head.route === Routes.UP) {
     return
   }
-  if (requestedRoute === Routes.RIGHT && (snake.route === Routes.LEFT || snake.route === Routes.RIGHT)) {
+  if (requestedRoute === Routes.RIGHT 
+    && head.route === Routes.LEFT) {
     return
   }
-  if (requestedRoute === Routes.LEFT && (snake.route === Routes.RIGHT || snake.route === Routes.LEFT)) {
+  if (requestedRoute === Routes.LEFT 
+    && head.route === Routes.RIGHT) {
     return
   }
-  snake.nextRoute.route = requestedRoute
-  let nextCell
-  if (routed && finishTick) {
-    routed = false
-    switch (snake.route) {
-      case Routes.LEFT:
-        nextCell = Math.floor(snake.x / 40) * 40 - 20
-        snake.nextRoute.cell = nextCell <= snakeBounds.x ? snakeBounds.width - 60 : nextCell
-      break;
-      case Routes.UP:
-        nextCell = Math.floor(snake.y / 40) * 40 - 20
-        snake.nextRoute.cell = nextCell <= snakeBounds.y ? snakeBounds.height - 40 : nextCell
-      break;
-      case Routes.DOWN:
-        nextCell = Math.ceil(snake.y / 40) * 40 + 20
-        snake.nextRoute.cell = nextCell >= snakeBounds.y + snakeBounds.height ? snakeBounds.y + 20 : nextCell
-      break;
-      case Routes.RIGHT:
-        nextCell = Math.ceil(snake.x / 40) * 40 + 20
-        snake.nextRoute.cell = nextCell >= snakeBounds.x + snakeBounds.width ? snakeBounds.x + 20 : nextCell
-      break;
-    }
-  }
-  console.log(snake.x, snake.y, snake.nextRoute.cell)
+  head.nextRoute.route = requestedRoute
+  needRoute = true
 }
