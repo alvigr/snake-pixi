@@ -41,9 +41,10 @@ const snakeH = PIXI.Texture.from('./snakehead.png');
 const snakeB = PIXI.Texture.from('./snakebody.png');
 const snakeT = PIXI.Texture.from('./snaketale.png');
 const bgCell = PIXI.Texture.from('./cell.png');
+const foodImg = PIXI.Texture.from('./food.png');
 
 const head = new PIXI.Sprite(snakeH);
-const tale = new PIXI.Sprite(snakeT);
+const food = new PIXI.Sprite(foodImg);
 
 let gameScene = new PIXI.Container();
 let bg = new PIXI.Container();
@@ -191,6 +192,10 @@ function rotation () {
   }) !== -1) {
     app.stop()
   }
+  console.log(gameScene)
+  if (newBend.x === food.x && newBend.y === food.y) {
+    setFood()
+  }
   newBend.route = head.route;
   bends.push(newBend);
 }
@@ -220,6 +225,8 @@ function rotationBody (body, i) {
     bends.shift()
   }
 }
+
+setFood()
 
 app.stage.addChild(bg);
 app.stage.addChild(gameScene);
@@ -260,4 +267,44 @@ function setNextRoute (event) {
     return
   }
   head.nextRoute = requestedRoute
+}
+
+function setFood () {
+  let posForFood = {
+    x: randomInteger(0, (app.screen.width - CELL) / CELL) * CELL, 
+    y: randomInteger(0, (app.screen.height - CELL) / CELL) * CELL
+  }
+  console.log(posForFood)
+  if (
+    bends.findIndex((element) => {
+      return element.x === posForFood.x && element.y === posForFood.y
+    }) === -1) {
+    food.x = posForFood.x + 20
+    food.y = posForFood.y + 20
+    food.anchor.x = 0.5;
+    food.anchor.y = 0.5;
+    gameScene.addChild(food);
+  } else {
+    setFood()
+    // for (let i = 0; i < 4; i++) {
+    //   const body = new PIXI.Sprite(snakeB);
+    //   body.y = 0.5 * CELL;
+    //   body.x = head.x - 20 - i * 10;
+    //   body.route = Routes.RIGHT;
+    //   body.anchor.x = 0.5;
+    //   body.anchor.y = 0.5;
+    //   body.nextRoute = Routes.RIGHT;
+    //   body.step = 20 - i * 10;
+    //   body.d = 0;
+    //   body._zIndex = 300 - i;
+    //   bodySnake.push(body)
+    //   gameScene.addChild(body);
+    // }
+  }
+}
+
+function randomInteger (min, max) {
+  let rand = min + Math.random() * (max + 1 - min);
+  rand = Math.floor(rand);
+  return rand;
 }
