@@ -63,7 +63,7 @@ for (let i = 0; i < app.screen.height; i += CELL) {
 head.y = 0.5 * CELL;
 head.x = 0.5 * CELL;
 head.route = Routes.RIGHT;
-head.speed = 2;
+head.speed = 3;
 head.anchor.x = 0.5;
 head.anchor.y = 0.5;
 head.nextRoute = Routes.RIGHT;
@@ -72,10 +72,10 @@ head.d = 0;
 head._zIndex = 301;
 
 let bends = [];
-
+let activeCell = [];
 let bodySnake = [];
 
-for (let i = 0; i <= 30; i++) {
+for (let i = 0; i < 24; i++) {
   const body = new PIXI.Sprite(snakeB);
   body.y = 0.5 * CELL;
   body.x = head.x - 20 - i * 10;
@@ -158,42 +158,41 @@ function cheackBounds (obj) {
 }
 
 function rotation () {
+  let newBend = {
+    x: null,
+    y: null,
+    route: null,
+    routed: 0
+  };
+  newBend.x = Math.round(head.x / 10) * 10
+  newBend.y = Math.round(head.y / 10) * 10
   if (head.nextRoute !== head.route
     && head.x > 0
     && head.x < app.screen.width
     && head.y > 0
     && head.y < app.screen.height) {
-    let newBend = {
-      x: null,
-      y: null,
-      route: null 
-    };
     if (head.route === Routes.RIGHT) {
-      newBend.y = head.y
       head.y += head.nextRoute === Routes.DOWN ? head.d  : -head.d 
       head.x = Math.round(head.x - head.d );
-      newBend.x = head.x
     } else if (head.route === Routes.LEFT) {
-      newBend.y = head.y
       head.y += head.nextRoute === Routes.DOWN ? head.d  : -head.d 
       head.x = Math.round(head.x + head.d );
-      newBend.x = head.x
     } else if (head.route === Routes.UP) {
-      newBend.x = head.x
       head.x += head.nextRoute === Routes.RIGHT ? head.d  : -head.d 
       head.y = Math.round(head.y + head.d );
-      newBend.y = head.y
     } else if (head.route === Routes.DOWN) {
-      newBend.x = head.x
       head.x += head.nextRoute === Routes.RIGHT ? head.d  : -head.d 
       head.y = Math.round(head.y - head.d );
-      newBend.y = head.y
     }
     head.route = head.nextRoute;
-    newBend.route = head.nextRoute;
-    bends.push(newBend);
-    console.log(newBend)
   }
+  if (bends.findIndex((bend) => {
+    return newBend.x === bend.x && newBend.y === bend.y
+  }) !== -1) {
+    app.stop()
+  }
+  newBend.route = head.route;
+  bends.push(newBend);
 }
 
 function rotationBody (body, i) {
@@ -215,11 +214,10 @@ function rotationBody (body, i) {
       body.x += body.nextRoute === Routes.RIGHT ? body.d  : -body.d 
       body.y = Math.round(body.y - body.d );
     }
-    if (i === bodySnake.length - 1) {
-      body.route =  bends.shift().route
-    } else {
-      body.route = body.nextRoute;
-    }
+  }
+  body.route = body.nextRoute;
+  if (newBend && i === bodySnake.length - 1) {
+    bends.shift()
   }
 }
 
