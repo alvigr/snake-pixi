@@ -64,7 +64,7 @@ for (let i = 0; i < app.screen.height; i += CELL) {
 head.y = 0.5 * CELL;
 head.x = 0.5 * CELL;
 head.route = Routes.RIGHT;
-head.speed = 3;
+head.speed = 4;
 head.anchor.x = 0.5;
 head.anchor.y = 0.5;
 head.nextRoute = Routes.RIGHT;
@@ -125,7 +125,7 @@ function moveHead (delta) {
 }
 
 function moveBody (body, i) {
-  if (body.step >= CELL) {
+  if (body.step >= CELL - 3) {
     body.d  = body.step - CELL
     rotationBody(body, i);  
     body.step = body.d ;
@@ -163,7 +163,6 @@ function rotation () {
     x: null,
     y: null,
     route: null,
-    routed: 0
   };
   newBend.x = Math.round(head.x / 10) * 10
   newBend.y = Math.round(head.y / 10) * 10
