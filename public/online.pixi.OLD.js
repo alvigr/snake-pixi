@@ -32,8 +32,9 @@ const keyMap = {
 const app = new PIXI.Application({
   width: 20 * CELL, 
   height: 15 * CELL, 
-  backgroundColor: 0xE3E3E3,
+  backgroundColor: 0xDFEBE0,
 });
+
 document.body.appendChild(app.view);
 document.addEventListener('keydown', setNextRoute);
 
@@ -49,8 +50,13 @@ const food = new PIXI.Sprite(foodImg);
 let gameScene = new PIXI.Container();
 let bg = new PIXI.Container();
 
+let nextCell;
+let snake = 3;
+let deltaX;
+let deltaY;
+let eating = 0;
+
 gameScene.sortableChildren  = true;
-bg.zIndex = 1;
 
 for (let i = 0; i < app.screen.height; i += CELL) {
   for (let j = 0; j < app.screen.width; j += CELL) {
@@ -64,19 +70,18 @@ for (let i = 0; i < app.screen.height; i += CELL) {
 head.y = 0.5 * CELL;
 head.x = 0.5 * CELL;
 head.route = Routes.RIGHT;
-head.speed = 4;
+head.speed = 5;
 head.anchor.x = 0.5;
 head.anchor.y = 0.5;
 head.nextRoute = Routes.RIGHT;
 head.step = 0;
 head.d = 0;
-head._zIndex = 301;
+head._zIndex = 1;
 
-let bends = [];
 let activeCell = [];
 let bodySnake = [];
 
-for (let i = 0; i < 80; i++) {
+for (let i = 0; i < snake * 4; i++) {
   const body = new PIXI.Sprite(snakeB);
   body.y = 0.5 * CELL;
   body.x = head.x - 20 - i * 10;
@@ -86,16 +91,14 @@ for (let i = 0; i < 80; i++) {
   body.nextRoute = Routes.RIGHT;
   body.step = 20 - i * 10;
   body.d = 0;
-  body._zIndex = 300 - i;
+  body._zIndex = 1 - i;
   bodySnake.push(body)
   gameScene.addChild(body);
 }
 
 gameScene.addChild(head);
 
-let nextCell;
-let deltaX;
-let deltaY;
+
 
 function moveHead (delta) {
   cheackBounds(head);
@@ -103,7 +106,8 @@ function moveHead (delta) {
   if (head.step >= CELL - 5) {
     head.d  = head.step - CELL
     rotation();  
-    head.step = head.d ;
+    head.step = head.d;
+    cheackHeadInBody();
   }
   const velocity = Velocities[head.route]
 
@@ -123,15 +127,20 @@ function moveHead (delta) {
 }
 
 function moveBody (body, i) {
+  let eat = false
   cheackBounds(body);
 
   if (body.step >= CELL - 5) {
     body.d  = body.step - CELL
     rotationBody(body, i);  
     body.step = body.d;
+    eat = true
   }
 
   const velocity = Velocities[body.route]
+
+  body.rotation = Rotations[body.route]
+
   body.x += deltaX * velocity.x
   body.y += deltaY * velocity.y
 
@@ -139,6 +148,24 @@ function moveBody (body, i) {
     body.step += deltaX 
   } else {
     body.step += deltaY 
+  }
+  if (eating && eat && i === bodySnake.length - 1) {
+    const lastBody = bodySnake[bodySnake.length - 1]
+    const body = new PIXI.Sprite(snakeB);
+    body.x = lastBody.x - 10 * Velocities[lastBody.route].x;
+    body.y = lastBody.y - 10 * Velocities[lastBody.route].y;
+    body.route = lastBody.route;
+    body.anchor.x = 0.5;
+    body.anchor.y = 0.5;
+    body.nextRoute = lastBody.route;
+    body.step = lastBody.step - 10;
+    body.d = 0;
+    body._zIndex = lastBody._zIndex - 1;
+    bodySnake.push(body)
+    gameScene.addChild(body);
+    eating -= 1;
+    console.log('eating', body)
+    eat = false;
   }
 }
 
@@ -186,28 +213,30 @@ function rotation () {
     head.route = head.nextRoute;
   }
   if (newBend.x === food.x && newBend.y === food.y) {
+    eatFood()
     setFood()
   }
   newBend.route = head.route;
-  bends.push(newBend);
+  activeCell.push(newBend);
 }
-let er = 0
+
+function eatFood () {
+  eating += 4
+  snake +=1
+}
+
 function rotationBody (body, i) {
-  let newBendIndex = bends.findIndex((bend) => {
+  let newBendIndex = activeCell.findIndex((bend) => {
     return (Math.round(body.x / 10) * 10) === bend.x && (Math.round(body.y / 10) * 10) === bend.y
   })
-  if (bends[newBendIndex]) {
-    body.nextRoute = bends[newBendIndex].route 
-    bends[newBendIndex].routed += 1
-    if (bends[newBendIndex].routed === bodySnake.length) {
-      bends.shift()
-      console.log('shift')
-      if (bends.filter((bend) => {
-        return bends[bends.length - 1].x === bend.x && bends[bends.length - 1].y === bend.y
-      }).length > 1) {
-        console.log(head.x, head.y, bends)
-        app.stop()
-      }
+  if (activeCell[newBendIndex] && i !== activeCell[newBendIndex].routed) {
+    console.log('error', i, activeCell[newBendIndex])
+  }
+  if (activeCell[newBendIndex]) {
+    body.nextRoute = activeCell[newBendIndex].route 
+    activeCell[newBendIndex].routed += 1
+    if (activeCell[newBendIndex].routed === bodySnake.length) {
+      activeCell.shift()
     }
   }
   if (body.nextRoute !== body.route) {
@@ -240,12 +269,20 @@ const snakeBounds = new PIXI.Rectangle(
   app.screen.height + 40
 );
 
-app.ticker.add((delta) => {
-  moveHead(delta)
-  bodySnake.forEach((body, i) => {
+app.ticker.add((delta) => { 
+  if (delta < 1.5) {
+    moveHead(delta)
+    bodySnake.forEach((body, i) => {
     moveBody(body, i)
-  }) 
+  })
+  } else {
+    console.log(delta)
+  }
 });
+
+function getNextCell () {
+  
+}
 
 function setNextRoute (event) {
   if ( ! (event.key in keyMap)) {
@@ -271,15 +308,21 @@ function setNextRoute (event) {
   head.nextRoute = requestedRoute
 }
 
+function cheackHeadInBody () {
+  if (activeCell.filter((bend) => {
+    return activeCell[activeCell.length - 1].x === bend.x && activeCell[activeCell.length - 1].y === bend.y
+  }).length > 1) {
+    console.log(head.x, head.y, activeCell)
+    app.stop()
+  }
+}
+
 function setFood () {
   let posForFood = {
     x: randomInteger(0, (app.screen.width - CELL) / CELL) * CELL, 
     y: randomInteger(0, (app.screen.height - CELL) / CELL) * CELL
   }
-  if (
-    bends.findIndex((bend) => {
-      return bend.x === posForFood.x && bend.y === posForFood.y
-    }) === -1) {
+  if (!activeCell.filter(bend => bend.x === posForFood.x + 20 && bend.y === posForFood.y + 20)[0]) {
     food.x = posForFood.x + 20
     food.y = posForFood.y + 20
     food.anchor.x = 0.5;
@@ -287,20 +330,6 @@ function setFood () {
     gameScene.addChild(food);
   } else {
     setFood()
-    // for (let i = 0; i < 4; i++) {
-    //   const body = new PIXI.Sprite(snakeB);
-    //   body.y = 0.5 * CELL;
-    //   body.x = head.x - 20 - i * 10;
-    //   body.route = Routes.RIGHT;
-    //   body.anchor.x = 0.5;
-    //   body.anchor.y = 0.5;
-    //   body.nextRoute = Routes.RIGHT;
-    //   body.step = 20 - i * 10;
-    //   body.d = 0;
-    //   body._zIndex = 300 - i;
-    //   bodySnake.push(body)
-    //   gameScene.addChild(body);
-    // }
   }
 }
 
