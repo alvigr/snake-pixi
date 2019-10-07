@@ -76,7 +76,7 @@ let bends = [];
 let activeCell = [];
 let bodySnake = [];
 
-for (let i = 0; i < 24; i++) {
+for (let i = 0; i < 80; i++) {
   const body = new PIXI.Sprite(snakeB);
   body.y = 0.5 * CELL;
   body.x = head.x - 20 - i * 10;
@@ -98,13 +98,13 @@ let deltaX;
 let deltaY;
 
 function moveHead (delta) {
+  cheackBounds(head);
 
-  if (head.step >= CELL) {
+  if (head.step >= CELL - 5) {
     head.d  = head.step - CELL
     rotation();  
     head.step = head.d ;
   }
-
   const velocity = Velocities[head.route]
 
   head.rotation = Rotations[head.route]
@@ -120,15 +120,15 @@ function moveHead (delta) {
   } else {
     head.step += deltaY 
   }
-
-  cheackBounds(head);
 }
 
 function moveBody (body, i) {
-  if (body.step >= CELL - 3) {
+  cheackBounds(body);
+
+  if (body.step >= CELL - 5) {
     body.d  = body.step - CELL
     rotationBody(body, i);  
-    body.step = body.d ;
+    body.step = body.d;
   }
 
   const velocity = Velocities[body.route]
@@ -140,8 +140,6 @@ function moveBody (body, i) {
   } else {
     body.step += deltaY 
   }
-
-  cheackBounds(body);
 }
 
 function cheackBounds (obj) {
@@ -163,6 +161,7 @@ function rotation () {
     x: null,
     y: null,
     route: null,
+    routed: 0
   };
   newBend.x = Math.round(head.x / 10) * 10
   newBend.y = Math.round(head.y / 10) * 10
@@ -186,24 +185,31 @@ function rotation () {
     }
     head.route = head.nextRoute;
   }
-  if (bends.findIndex((bend) => {
-    return newBend.x === bend.x && newBend.y === bend.y
-  }) !== -1) {
-    app.stop()
-  }
-  console.log(gameScene)
   if (newBend.x === food.x && newBend.y === food.y) {
     setFood()
   }
   newBend.route = head.route;
   bends.push(newBend);
 }
-
+let er = 0
 function rotationBody (body, i) {
-  let newBend = bends.find((bend) => {
+  let newBendIndex = bends.findIndex((bend) => {
     return (Math.round(body.x / 10) * 10) === bend.x && (Math.round(body.y / 10) * 10) === bend.y
   })
-  body.nextRoute = newBend ? newBend.route : body.route
+  if (bends[newBendIndex]) {
+    body.nextRoute = bends[newBendIndex].route 
+    bends[newBendIndex].routed += 1
+    if (bends[newBendIndex].routed === bodySnake.length) {
+      bends.shift()
+      console.log('shift')
+      if (bends.filter((bend) => {
+        return bends[bends.length - 1].x === bend.x && bends[bends.length - 1].y === bend.y
+      }).length > 1) {
+        console.log(head.x, head.y, bends)
+        app.stop()
+      }
+    }
+  }
   if (body.nextRoute !== body.route) {
     if (body.route === Routes.RIGHT) {
       body.y += body.nextRoute === Routes.DOWN ? body.d  : -body.d 
@@ -220,9 +226,6 @@ function rotationBody (body, i) {
     }
   }
   body.route = body.nextRoute;
-  if (newBend && i === bodySnake.length - 1) {
-    bends.shift()
-  }
 }
 
 setFood()
@@ -273,10 +276,9 @@ function setFood () {
     x: randomInteger(0, (app.screen.width - CELL) / CELL) * CELL, 
     y: randomInteger(0, (app.screen.height - CELL) / CELL) * CELL
   }
-  console.log(posForFood)
   if (
-    bends.findIndex((element) => {
-      return element.x === posForFood.x && element.y === posForFood.y
+    bends.findIndex((bend) => {
+      return bend.x === posForFood.x && bend.y === posForFood.y
     }) === -1) {
     food.x = posForFood.x + 20
     food.y = posForFood.y + 20
