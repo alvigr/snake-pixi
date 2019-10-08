@@ -6,7 +6,6 @@ const Routes = {
 };
 
 const CELL = 40;
-let routeCell
 
 const Velocities = {
   [Routes.UP]: { x: 0, y: -1 },
@@ -70,7 +69,7 @@ for (let i = 0; i < app.screen.height; i += CELL) {
 head.y = 0.5 * CELL;
 head.x = 0.5 * CELL;
 head.route = Routes.RIGHT;
-head.speed = 5;
+head.speed = 3;
 head.anchor.x = 0.5;
 head.anchor.y = 0.5;
 head.nextRoute = Routes.RIGHT;
@@ -107,7 +106,9 @@ function moveHead (delta) {
     head.d  = head.step - CELL
     rotation();  
     head.step = head.d;
-    cheackHeadInBody();
+    if (cheackHeadInBody()) {
+      return
+    }
   }
   const velocity = Velocities[head.route]
 
@@ -259,7 +260,7 @@ function rotationBody (body, i) {
 
 setFood()
 
-app.stage.addChild(bg);
+//app.stage.addChild(bg);
 app.stage.addChild(gameScene);
 
 const snakeBounds = new PIXI.Rectangle(
@@ -312,8 +313,8 @@ function cheackHeadInBody () {
   if (activeCell.filter((bend) => {
     return activeCell[activeCell.length - 1].x === bend.x && activeCell[activeCell.length - 1].y === bend.y
   }).length > 1) {
-    console.log(head.x, head.y, activeCell)
     app.stop()
+    return true
   }
 }
 
