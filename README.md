@@ -2,7 +2,7 @@
 Legendary game.
 
 <h2>Demo</h2>
-An online demo is available <a href="https://snake-pixi.herokuapp.com/" target="_blank">here</a>.
+An online demo is available <a href="https://snake-pixi.herokuapp.com/">here</a>.
 
 <h2>Development</h2>
 
