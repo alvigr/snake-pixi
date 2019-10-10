@@ -27,10 +27,6 @@ io.on('connection', client => {
     getGame(client).shutdown()
     sessions = sessions.filter(obj => obj.client !== client)
   })
-  client.on('setRoute', newRoute => {
-    console.log('New route', newRoute.requestedRoute)
-    getGame(client).setNextRoute(newRoute.requestedRoute, newRoute.snakeId)
-  })
   client.on('paused', () => {
     getGame(client).pauseOrResume()
     console.log('Game paused to client')
@@ -58,11 +54,6 @@ io.on('connection', client => {
         game.startNewGame()
       }
     }
-  })
-  client.on('finished', () => {
-    console.log('Finish Game')
-    getGame(client).shutdown()
-    sessions = sessions.filter(obj => obj.client !== client)
   })
   client.on('disconnect', () => { 
     console.log('user closed connection')

@@ -40,14 +40,6 @@ socket.on('connect', function() {
 socket.on('stream', function (data) {
   game = data.data
   gameArea = data.gameArea
-  if (game.status === 'finished') {
-    socket.emit('finished')
-    setTimeout(() => {
-      showBlock('menu')
-      hideBlock('gameplay')
-      hideBlock('waiting')
-    }, 5000)
-  }
   document.getElementById('score').innerText = snake
   document.getElementById('ico-pause').className = game.status === 'paused' ? 'play' : 'pause'
 })
@@ -249,7 +241,9 @@ function moveHead (delta) {
     rotation();  
     head.step = head.d;
     if (cheackHeadInBody()) {
-      console.log('gameOver')
+      setTimeout(() => {
+        exit()
+      }, 5000)
       return
     }
   }
