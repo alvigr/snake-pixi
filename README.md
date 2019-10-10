@@ -1,5 +1,5 @@
 # snake
-Legendary game.
+Legendary game. Based on PixiJS 5
 
 <h2>Demo</h2>
 An online demo is available <a href="https://snake-pixi.herokuapp.com/">here</a>.
