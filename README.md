@@ -2,11 +2,7 @@
 Legendary game.
 
 <h2>Demo</h2>
-An online demo is available <a href="https://megasnake.herokuapp.com/">here</a>.
-
-<h2>Production</h2>
-To start the application in the production server run:<br>
-<code>yarn start</code>
+An online demo is available <a href="https://snake-pixi.herokuapp.com/">here</a>.
 
 <h2>Development</h2>
 
