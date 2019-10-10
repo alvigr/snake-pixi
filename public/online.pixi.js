@@ -40,7 +40,6 @@ socket.on('connect', function() {
 socket.on('stream', function (data) {
   game = data.data
   gameArea = data.gameArea
-  document.getElementById('score').innerText = snake
   document.getElementById('ico-pause').className = game.status === 'paused' ? 'play' : 'pause'
 })
 
@@ -55,7 +54,6 @@ socket.on('invite', function (data) {
   snakeId = data.id
   console.log(data)
   console.log('invite получен', game.status)
-  document.getElementById('score').innerText = snake
   document.getElementById('ico-pause').className = game.status === 'paused' ? 'play' : 'pause'
   hideBlock('waiting')
   showBlock('gameplay')
@@ -171,6 +169,7 @@ function startNewGame () {
 }
 
 function playGame (delta) { 
+  document.getElementById('score').innerText = snake
   if (delta < 1.5) {
     moveHead(delta)
     bodySnake.forEach((body, i) => {
