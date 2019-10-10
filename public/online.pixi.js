@@ -241,10 +241,10 @@ function moveHead (delta) {
     rotation();  
     head.step = head.d;
     if (cheackHeadInBody()) {
+      speed = 0
       setTimeout(() => {
         exit()
       }, 5000)
-      return
     }
   }
   const velocity = Velocities[head.route]
