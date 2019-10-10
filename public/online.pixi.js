@@ -38,10 +38,8 @@ socket.on('connect', function() {
 })
 
 socket.on('stream', function (data) {
-  //console.log('stream', data.gameArea)
   game = data.data
   gameArea = data.gameArea
-  //console.log('Game получен', game.status)
   if (game.status === 'finished') {
     socket.emit('finished')
     setTimeout(() => {
@@ -50,7 +48,6 @@ socket.on('stream', function (data) {
       hideBlock('waiting')
     }, 5000)
   }
-  //console.log(data.id, snakeId)
   document.getElementById('score').innerText = snake
   document.getElementById('ico-pause').className = game.status === 'paused' ? 'play' : 'pause'
 })
@@ -59,45 +56,54 @@ socket.on('disconnect', function () {
   console.error('lost connection')
 })
 
-let app = new PIXI.Application({
-  width: 800, 
-  height: 600, 
-  backgroundColor: 0xDFEBE0,
-});
+socket.on('invite', function (data) {
+  console.log('invite', data.gameArea)
+  game = data.data
+  gameArea = data.gameArea
+  snakeId = data.id
+  console.log(data)
+  console.log('invite получен', game.status)
+  document.getElementById('score').innerText = snake
+  document.getElementById('ico-pause').className = game.status === 'paused' ? 'play' : 'pause'
+  hideBlock('waiting')
+  showBlock('gameplay')
+  startNewGame()
+})
+
+
 
 const snakeH = PIXI.Texture.from('./snakehead.png');
 const snakeB = PIXI.Texture.from('./snakebody.png');
+const snakeBD = PIXI.Texture.from('./snakebodyd.png');
 const foodImg = PIXI.Texture.from('./food.png');
 
-let head = new PIXI.Sprite(snakeH);
-let food = new PIXI.Sprite(foodImg);
-let gameScene = new PIXI.Container();
-gameScene.sortableChildren  = true;
-let bg
-let game
-let gameArea
-let snakeId
-let activeCell = [];
-let bodySnake = new PIXI.Container();
-let nextCell;
-let snake = 3;
-let deltaX;
-let deltaY;
-let eating = 0;
-let snakeBounds = new PIXI.Rectangle(
-  -20,
-  -20,
-  app.screen.width + 40,
-  app.screen.height + 40
-);
+let renderer,
+stage,
+ticker,
+head,
+food,
+gameScene,
+bg,
+game,
+gameArea,
+snakeId,
+nextCell,
+deltaX,
+deltaY,
+snakeBounds,
+eating = 0,
+snake = 3,
+speed = 2.4,
+activeCell = [],
+bodySnake = [];
 
 function pause () {
   if (game.status === 'playing') {
     socket.emit('paused')
-    app.stop()
+    ticker.stop()
   } else if (game.status === 'paused') {
     socket.emit('resumed')
-    app.start()
+    ticker.start()
   }
 }
 
@@ -113,25 +119,11 @@ function init () {
   document.addEventListener('keydown', setNextRoute)
   document.getElementById('pause').addEventListener('click', pause)
   document.getElementById('singlePlayer').addEventListener('click', () => {connectToGame(Modes.SINGLE)})
-  document.getElementById('multiPlayer').addEventListener('click', () => {connectToGame(Modes.MULTI)})
   document.getElementById('exit').addEventListener('click', exit)
 }
 
 function connectToGame (mode) {
   console.log('Connect to game')
-  socket.on('invite', function (data) {
-    console.log('invite', data.gameArea)
-    game = data.data
-    gameArea = data.gameArea
-    snakeId = data.id
-    console.log(data)
-    console.log('invite получен', game.status)
-    document.getElementById('score').innerText = snake
-    document.getElementById('ico-pause').className = game.status === 'paused' ? 'play' : 'pause'
-    hideBlock('waiting')
-    showBlock('gameplay')
-    startNewGame()
-  })
   socket.emit('requestInvite', {mode})
   hideBlock('menu')
   showBlock('waiting')
@@ -139,45 +131,57 @@ function connectToGame (mode) {
 
 function exit () {
   console.log('exit')
-  bodySnake.removeChildren()
-  gameScene.removeChildren()
-  app.ticker.remove(playGame)
-  console.log(app.ticker)
-
-  // head = null
-  // food = null
-  // gameScene = null
-  activeCell = [];
-  
-  // //bodySnake = [];
-  //nextCell = null
-  snake = 3;
-  deltaX = 0
-  deltaY = 0
-  eating = 0;
   socket.emit('exit')
+  resetState()
   showBlock('menu')
   hideBlock('gameplay')
 }
 
+function resetState () {
+  ticker.destroy()
+  renderer.destroy(true)
+  activeCell = [];
+  bodySnake = [];
+  snake = 3;
+  speed = 2.4
+  deltaX = 0
+  deltaY = 0
+  eating = 0;
+}
+
 function startNewGame () {
-  console.log('startNewGame')
+  console.log('startNewGame', ticker)
+  renderer = new PIXI.Renderer({ width: 800, height: 600, backgroundColor: 0xDFEBE0 });
+  document.body.appendChild(renderer.view);
+  stage = new PIXI.Container();
 
-  document.body.appendChild(app.view);
+  ticker = new PIXI.Ticker();
+  ticker.add(() => {
+    renderer.render(stage)
+  }, PIXI.UPDATE_PRIORITY.LOW)
+  ticker.start()
 
+  head = new PIXI.Sprite(snakeH);
+  food = new PIXI.Sprite(foodImg);
+  gameScene = new PIXI.Container();
+  gameScene.sortableChildren  = true;
+  snakeBounds = new PIXI.Rectangle(
+    -20,
+    -20,
+    renderer.screen.width + 40,
+    renderer.screen.height + 40
+  );
   setFood();
   setHead();
   setBody();
-
-  app.stage.addChild(gameScene);
-  
-  app.ticker.add(playGame);
+  stage.addChild(gameScene);
+  ticker.add(playGame);
 }
 
 function playGame (delta) { 
   if (delta < 1.5) {
     moveHead(delta)
-    bodySnake.children.forEach((body, i) => {
+    bodySnake.forEach((body, i) => {
     moveBody(body, i)
   })
   }
@@ -185,9 +189,8 @@ function playGame (delta) {
 
 function setHead () {
   head.y = 0.5 * gameArea.cell;
-  head.x = 0.5 * gameArea.cell;
+  head.x = 0.5 * gameArea.cell * 5;
   head.route = Routes.RIGHT;
-  head.speed = 3;
   head.anchor.x = 0.5;
   head.anchor.y = 0.5;
   head.nextRoute = Routes.RIGHT;
@@ -199,7 +202,7 @@ function setHead () {
 
 function setBody () {
   for (let i = 0; i < snake * 4; i++) {
-    const body = new PIXI.Sprite(snakeB);
+    const body = i%2 === 0 ? new PIXI.Sprite(snakeB) : new PIXI.Sprite(snakeBD)
     body.y = 0.5 * gameArea.cell;
     body.x = head.x - 20 - i * 10;
     body.route = Routes.RIGHT;
@@ -209,10 +212,9 @@ function setBody () {
     body.step = 20 - i * 10;
     body.d = 0;
     body._zIndex = 300 - i;
-    //bodySnake.push(body)
-    bodySnake.addChild(body);
+    bodySnake.push(body);
+    gameScene.addChild(body);
   }
-  gameScene.addChild(bodySnake);
 }
 
 function setNextRoute (event) {
@@ -255,8 +257,8 @@ function moveHead (delta) {
 
   head.rotation = Rotations[head.route]
 
-  deltaX = delta * head.speed
-  deltaY = delta * head.speed
+  deltaX = delta * speed
+  deltaY = delta * speed
 
   head.x += deltaX * velocity.x
   head.y += deltaY * velocity.y
@@ -291,9 +293,9 @@ function moveBody (body, i) {
   } else {
     body.step += deltaY 
   }
-  if (eating && eat && i === bodySnake.children.length - 1) {
-    const lastBody = bodySnake.children[bodySnake.children.length - 1]
-    const body = new PIXI.Sprite(snakeB);
+  if (eating && eat && i === bodySnake.length - 1) {
+    const lastBody = bodySnake[bodySnake.length - 1]
+    const body = i%2 === 0 ? new PIXI.Sprite(snakeBD) : new PIXI.Sprite(snakeB) 
     body.x = lastBody.x - 10 * Velocities[lastBody.route].x;
     body.y = lastBody.y - 10 * Velocities[lastBody.route].y;
     body.route = lastBody.route;
@@ -303,10 +305,9 @@ function moveBody (body, i) {
     body.step = lastBody.step - 10;
     body.d = 0;
     body._zIndex = lastBody._zIndex - 1;
-    //bodySnake.push(body)
-    bodySnake.addChild(body);
+    bodySnake.push(body);
+    gameScene.addChild(body);
     eating -= 1;
-    console.log('eating', body)
     eat = false;
   }
 }
@@ -336,9 +337,9 @@ function rotation () {
   newBend.y = Math.round(head.y / 10) * 10
   if (head.nextRoute !== head.route
     && head.x > 0
-    && head.x < app.screen.width
+    && head.x < renderer.screen.width
     && head.y > 0
-    && head.y < app.screen.height) {
+    && head.y < renderer.screen.height) {
     if (head.route === Routes.RIGHT) {
       head.y += head.nextRoute === Routes.DOWN ? head.d  : -head.d 
       head.x = Math.round(head.x - head.d );
@@ -365,6 +366,9 @@ function rotation () {
 function eatFood () {
   eating += 4
   snake +=1
+  if (snake % 5 === 0) {
+    speed += 0.2
+  }
 }
 
 function rotationBody (body, i) {
@@ -377,7 +381,7 @@ function rotationBody (body, i) {
   if (activeCell[newBendIndex]) {
     body.nextRoute = activeCell[newBendIndex].route 
     activeCell[newBendIndex].routed += 1
-    if (activeCell[newBendIndex].routed === bodySnake.children.length) {
+    if (activeCell[newBendIndex].routed === bodySnake.length) {
       activeCell.shift()
     }
   }
@@ -403,15 +407,15 @@ function cheackHeadInBody () {
   if (activeCell.filter((bend) => {
     return activeCell[activeCell.length - 1].x === bend.x && activeCell[activeCell.length - 1].y === bend.y
   }).length > 1) {
-    app.stop()
+    ticker.stop()
     return true
   }
 }
 
 function setFood () {
   let posForFood = {
-    x: randomInteger(0, (app.screen.width - gameArea.cell) / gameArea.cell) * gameArea.cell, 
-    y: randomInteger(0, (app.screen.height - gameArea.cell) / gameArea.cell) * gameArea.cell
+    x: randomInteger(0, (renderer.screen.width - gameArea.cell) / gameArea.cell) * gameArea.cell, 
+    y: randomInteger(0, (renderer.screen.height - gameArea.cell) / gameArea.cell) * gameArea.cell
   }
   if (!activeCell.filter(bend => bend.x === posForFood.x + 20 && bend.y === posForFood.y + 20)[0]) {
     food.x = posForFood.x + 20
