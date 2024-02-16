@@ -2,7 +2,7 @@
 Legendary game. Based on PixiJS 5
 
 <h2>Demo</h2>
-The online demo is available <a href="https://snake-pixi.herokuapp.com/">here</a>.
+The online demo is available <a href="https://snake-pixi.onrender.com">here</a>.
 
 <h2>Development</h2>
 

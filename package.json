@@ -1,12 +1,12 @@
 {
   "name": "snake",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "src/server.js",
   "repository": "https://github.com/alvigr/snake.git",
   "author": "alvigr <44508235+alvigr@users.noreply.github.com>",
   "license": "MIT",
   "scripts": {
-    "start": "node server.js",
+    "start": "node src/server.js",
     "test": "jest"
   },
   "dependencies": {
